@@ -116,8 +116,21 @@ const loginUser = async (req, res) => {
             });
         }
 
+        const token = jwt.sign(
+            {
+                userId: user.id,
+                email: user.email,
+                role: user.role
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn: "1h"
+            }
+        );            
+
         res.json({
             message: "Login successful",
+            token: token,
             user: {
                 id: user.id,
                 name: user.name,
@@ -128,9 +141,65 @@ const loginUser = async (req, res) => {
     });
 };
 
+//-------------------------------------------------------------------------------------
+// const getProfile = (req,res) =>{
+//     res.json({
+//         message : "you are authorized",
+//         user : req.user
+//     });
+// }
+const getProfile = (req, res) => {
+
+    const userId = req.user.userId;
+
+    userModel.getUserById(userId, (err, results) => {
+
+        if (err) {
+            return res.status(500).json({
+                message: "Failed to fetch profile"
+            });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({
+                message: "User not found"
+            });
+        }
+
+        res.json({
+            message: "Profile fetched successfully",
+            user: results[0]
+        });
+    });
+
+};
+//-------------------------------------------------------------------------------------
+
+const adminTest = (req, res) => {
+
+    res.json({
+        message: "Admin access granted"
+    });
+
+};
+
+//-----------------------------------------------------------------------------------
+
+const logoutUser = (req, res) => {
+    res.json({
+        message: "Logout successful"
+    });
+
+};
+
+//------------------------------------------------------------------------------------
+
 module.exports = {
     getUsers,
     createUser,
     getUserById,
-    loginUser
+    loginUser,
+    getProfile,
+    adminTest,
+    logoutUser
 };

@@ -3,7 +3,8 @@ const db = require("../config/database");
 //get all users
 const getAllUsers = (callback) => {
 
-    const sql = "SELECT * FROM users";
+    // const sql = "SELECT * FROM users";
+    const sql = `SELECT id, name, email, role, created_at FROM users`;
 
     db.query(sql, (err, results) => {
 
