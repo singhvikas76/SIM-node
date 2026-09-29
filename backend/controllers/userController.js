@@ -1,4 +1,7 @@
 const userModel = require("../models/userModel");
+const jwt = require("jsonwebtoken");
+
+const bcrypt = require("bcryptjs");
 
 const getUsers = (req, res) => {
 
@@ -15,7 +18,29 @@ const getUsers = (req, res) => {
     });
 };
 
-const createUser = (req, res) => {
+const getUserById = (req, res) => {
+
+    const id = req.params.id;
+
+    userModel.getUserById(id, (err, results) => {
+
+        if (err) {
+            return res.status(500).json({
+                message: "Failed to fetch user"
+            });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({
+                message: "User not found"
+            });
+        }
+
+        res.json(results[0]);
+    });
+};
+
+const createUser = async (req, res) => {
 
     const userData = req.body;
     
@@ -25,22 +50,87 @@ const createUser = (req, res) => {
         });
     }
 
-    userModel.createUser(userData, (err, result) => {
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
 
-        if (err.code === "ER_DUP_ENTRY") {
-        return res.status(409).json({
-            message: "Email already registered"
+    const newUser = {
+        name: userData.name,
+        email: userData.email,
+        password: hashedPassword
+    };
+
+    userModel.createUser(newUser, (err, result) => {
+
+        if (err) {
+            if (err.code === "ER_DUP_ENTRY") {
+                return res.status(409).json({
+                    message: "Email already registered"
+                });
+            }
+            return res.status(500).json({
+                message: "Failed to create user"
+            });
+
+        }
+        res.status(201).json({
+                message: "User created successfully",
+                userId: result.insertId
+            });
+    });
+};
+
+//--------------------------------------------------------------------------------------
+const loginUser = async (req, res) => {
+
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({
+            message: "Email and password are required"
+        });
+    }
+
+    userModel.getUserByEmail(email, async (err, results) => {
+
+        if (err) {
+            return res.status(500).json({
+                message: "Login failed"
             });
         }
 
-        res.status(201).json({
-            message: "User created successfully",
-            userId: result.insertId
+        if (results.length === 0) {
+            return res.status(401).json({
+                message: "Invalid email or password"
+            });
+        }
+
+        const user = results[0];
+
+        const isPasswordCorrect = await bcrypt.compare(
+            password,
+            user.password
+        );
+
+        if (!isPasswordCorrect) {
+            return res.status(401).json({
+                message: "Invalid email or password"
+            });
+        }
+
+        res.json({
+            message: "Login successful",
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
         });
     });
 };
 
 module.exports = {
     getUsers,
-    createUser
+    createUser,
+    getUserById,
+    loginUser
 };

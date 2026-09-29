@@ -1,5 +1,6 @@
 const db = require("../config/database");
-
+//--------------------------------------------------------------------------------------
+//get all users
 const getAllUsers = (callback) => {
 
     const sql = "SELECT * FROM users";
@@ -14,7 +15,25 @@ const getAllUsers = (callback) => {
         callback(null, results);
     });
 };
+//-------------------------------------------------------------------------------------
+//get user by id
+const getUserById = (id, callback) => {
 
+    const sql = "SELECT id, name, email, role, created_at FROM users WHERE id = ?";
+
+    db.query(sql, [id], (err, results) => {
+
+        if (err) {
+            callback(err, null);
+            return;
+        }
+
+        callback(null, results);
+    });
+};
+
+//-------------------------------------------------------------------------------------
+//create new user
 const createUser = (userData, callback) => {
 
     const sql = `
@@ -39,7 +58,32 @@ const createUser = (userData, callback) => {
     });
 };
 
+//-------------------------------------------------------------------------------------
+
+//get user by email for login
+const getUserByEmail = (email, callback) => {
+
+    const sql = `
+        SELECT id, name, email, password, role
+        FROM users
+        WHERE email = ?
+    `;
+
+    db.query(sql, [email], (err, results) => {
+
+        if (err) {
+            callback(err, null);
+            return;
+        }
+
+        callback(null, results);
+    });
+};
+
+//-------------------------------------------------------------------------------------
 module.exports = {
     getAllUsers,
-    createUser
+    createUser,
+    getUserById,
+    getUserByEmail
 };
